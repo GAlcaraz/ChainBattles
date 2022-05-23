@@ -9,16 +9,45 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 contract ChainBattles is ERC721URIStorage {
     using Strings for uint256;
     using Counters for Counters.Counter;
+    uint256 randNonce = 0;
 
     Counters.Counter private _tokenIds;
 
-    mapping(uint256 => uint256) public tokenIdToLevels;
+    struct Attributes {
+        uint256 level;
+        uint256 strength;
+        uint256 speed;
+        uint256 intellect;
+        uint256 hitPoints;
+    }
+
+    mapping(uint256 => Attributes) public tokenIdToAttributes;
 
     constructor() ERC721("Chain Battles", "CBTLS") {}
 
-    function getLevels(uint256 tokenId) public view returns (string memory) {
-        uint256 levels = tokenIdToLevels[tokenId];
-        return levels.toString();
+    function getLevel(uint256 tokenId) public view returns (string memory) {
+        Attributes storage _attributes = tokenIdToAttributes[tokenId];
+        return _attributes.level.toString();
+    }
+
+    function getStrength(uint256 tokenId) public view returns (string memory) {
+        Attributes storage _attributes = tokenIdToAttributes[tokenId];
+        return _attributes.strength.toString();
+    }
+
+    function getSpeed(uint256 tokenId) public view returns (string memory) {
+        Attributes storage _attributes = tokenIdToAttributes[tokenId];
+        return _attributes.speed.toString();
+    }
+
+    function getIntellect(uint256 tokenId) public view returns (string memory) {
+        Attributes storage _attributes = tokenIdToAttributes[tokenId];
+        return _attributes.intellect.toString();
+    }
+
+    function getHitPoints(uint256 tokenId) public view returns (string memory) {
+        Attributes storage _attributes = tokenIdToAttributes[tokenId];
+        return _attributes.hitPoints.toString();
     }
 
     function generateCharacter(uint256 tokenId)
@@ -33,9 +62,25 @@ contract ChainBattles is ERC721URIStorage {
             '<text x="50%" y="40%" class="base" dominant-baseline="middle" text-anchor="middle">',
             "Warrior",
             "</text>",
-            '<text x="50%" y="50%" class="base" dominant-baseline="middle" text-anchor="middle">',
-            "Levels: ",
-            getLevels(tokenId),
+            '<text x="50%" y="55%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            "Level: ",
+            getLevel(tokenId),
+            "</text>",
+            '<text x="50%" y="60%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            "Strength: ",
+            getStrength(tokenId),
+            "</text>",
+            '<text x="50%" y="65%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            "Speed: ",
+            getSpeed(tokenId),
+            "</text>",
+            '<text x="50%" y="70%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            "Intellect: ",
+            getIntellect(tokenId),
+            "</text>",
+            '<text x="50%" y="75%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            "HitPoints: ",
+            getHitPoints(tokenId),
             "</text>",
             "</svg>"
         );
@@ -73,7 +118,13 @@ contract ChainBattles is ERC721URIStorage {
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
         _safeMint(msg.sender, newItemId);
-        tokenIdToLevels[newItemId] = 0;
+        Attributes storage _attributes = tokenIdToAttributes[newItemId];
+        _attributes.level = 1;
+        _attributes.strength = 1;
+        _attributes.speed = 1;
+        _attributes.intellect = 1;
+        _attributes.hitPoints = 10;
+
         _setTokenURI(newItemId, getTokenURI(newItemId));
     }
 
@@ -83,8 +134,32 @@ contract ChainBattles is ERC721URIStorage {
             ownerOf(tokenId) == msg.sender,
             "You must own this NFT to train it!"
         );
-        uint256 currentLevel = tokenIdToLevels[tokenId];
-        tokenIdToLevels[tokenId] = currentLevel + 1;
+
+        Attributes storage _attributes = tokenIdToAttributes[tokenId];
+
+        uint256 currentLevel = _attributes.level;
+        _attributes.level = currentLevel + 1;
+
+        uint256 strength = _attributes.strength;
+        _attributes.strength = strength + randMod(3) + 1;
+
+        uint256 speed = _attributes.speed;
+        _attributes.speed = speed + randMod(3) + 1;
+
+        uint256 intellect = _attributes.intellect;
+        _attributes.intellect = intellect + randMod(3) + 1;
+
+        uint256 hitPoints = _attributes.hitPoints;
+        _attributes.hitPoints = hitPoints + 10;
+
         _setTokenURI(tokenId, getTokenURI(tokenId));
+    }
+
+    function randMod(uint256 _modulus) private returns (uint256) {
+        randNonce++;
+        uint256 rand = uint256(
+            keccak256(abi.encodePacked(block.timestamp, msg.sender, randNonce))
+        ) % _modulus;
+        return rand;
     }
 }
